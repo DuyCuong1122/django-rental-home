@@ -9,6 +9,6 @@
 /dataSources/
 /dataSources.local.xml
 
-./.env
-./credentials/
+.env
+credentials/
 *.json
