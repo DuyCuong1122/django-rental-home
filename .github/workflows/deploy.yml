@@ -1,0 +1,37 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            set -e
+
+            cd ~/django-rental-home
+
+            echo "Pull latest code..."
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
+
+            echo "Rebuild containers..."
+            docker compose up -d --build
+
+            echo "Cleanup unused images..."
+            docker image prune -af
+
+            echo "Deploy success"
