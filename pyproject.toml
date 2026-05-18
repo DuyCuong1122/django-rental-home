@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "django-rental-house"
+version = "0.1.0"
+description = ""
+authors = ["EthanLe <leduycuong726@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
