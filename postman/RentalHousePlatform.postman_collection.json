@@ -268,7 +268,7 @@
           }
         },
         {
-          "name": "PUT Me",
+          "name": "PUT Me (Full Update)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -290,6 +290,44 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"phone\": \"0123456789\",\n  \"avatar_url\": null,\n  \"bio\": \"Hello from Postman\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "profile",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH Me (Avatar Only)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avatar_url\": \"{{avatar_file_url}}\"\n}\n"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/profile/me",
@@ -359,6 +397,451 @@
                 "v1",
                 "upload",
                 "presigned-url"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Upload Avatar to S3 (Use avatar_upload_url)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "image/jpeg"
+              }
+            ],
+            "url": {
+              "raw": "{{avatar_upload_url}}",
+              "host": [
+                "{{avatar_upload_url}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "POST Create Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  const chatRoomId = data?.chat_room?.id;",
+                  "  if (chatRoomId) pm.environment.set('chat_room_id', chatRoomId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": \"{{room_id}}\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Inbox (Rooms)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body?.next_cursor) pm.environment.set('chat_next_cursor', body.next_cursor);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms?cursor={{chat_cursor}}&limit={{chat_limit}}&filter={{chat_filter}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms"
+              ],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "{{chat_cursor}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{chat_limit}}"
+                },
+                {
+                  "key": "filter",
+                  "value": "{{chat_filter}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Room Detail",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms/{{chat_room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms",
+                "{{chat_room_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Messages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body?.next_cursor) pm.environment.set('chat_messages_next_cursor', body.next_cursor);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms/{{chat_room_id}}/messages?cursor={{chat_messages_cursor}}&limit={{chat_messages_limit}}&before_message_id={{before_message_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms",
+                "{{chat_room_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "{{chat_messages_cursor}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{chat_messages_limit}}"
+                },
+                {
+                  "key": "before_message_id",
+                  "value": "{{before_message_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Mark Read",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message_id\": \"{{message_id}}\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms/{{chat_room_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms",
+                "{{chat_room_id}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Unread Count",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "unread-count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Chat Image Presigned URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body?.file_url) pm.environment.set('chat_image_file_url', body.file_url);",
+                  "  if (body?.upload_url) pm.environment.set('chat_image_upload_url', body.upload_url);",
+                  "  if (body?.object_key) pm.environment.set('chat_image_object_key', body.object_key);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_name\": \"image.jpg\",\n  \"content_type\": \"image/jpeg\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/image/presigned-url",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "image",
+                "presigned-url"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE Room (Local Delete)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms/{{chat_room_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms",
+                "{{chat_room_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Block User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/rooms/{{chat_room_id}}/block",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "rooms",
+                "{{chat_room_id}}",
+                "block"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Report User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chat_room_id\": \"{{chat_room_id}}\",\n  \"reason\": \"spam\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/chat/report",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "chat",
+                "report"
               ]
             }
           }
@@ -624,5 +1107,196 @@
       ]
     }
   ],
-  "variable": []
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "ws_base_url",
+      "value": "ws://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "tenant_email",
+      "value": "tenant@example.com",
+      "type": "string"
+    },
+    {
+      "key": "tenant_password",
+      "value": "Password123!",
+      "type": "string"
+    },
+    {
+      "key": "landlord_email",
+      "value": "landlord@example.com",
+      "type": "string"
+    },
+    {
+      "key": "landlord_password",
+      "value": "Password123!",
+      "type": "string"
+    },
+    {
+      "key": "login_email",
+      "value": "{{tenant_email}}",
+      "type": "string"
+    },
+    {
+      "key": "login_password",
+      "value": "{{tenant_password}}",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "avatar_file_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "avatar_upload_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_room_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_cursor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_next_cursor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_limit",
+      "value": "20",
+      "type": "string"
+    },
+    {
+      "key": "chat_filter",
+      "value": "all",
+      "type": "string"
+    },
+    {
+      "key": "chat_messages_cursor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_messages_next_cursor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_messages_limit",
+      "value": "20",
+      "type": "string"
+    },
+    {
+      "key": "before_message_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "message_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_image_file_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_image_upload_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "chat_image_object_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "keyword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "district",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ward",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "min_price",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "max_price",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "min_area",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "max_area",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "limit",
+      "value": "20",
+      "type": "string"
+    },
+    {
+      "key": "offset",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
 }

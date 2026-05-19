@@ -43,7 +43,8 @@ class RoomRepository:
 
         await self.session.commit()
         await self.session.refresh(db_room)
-        return db_room
+        room = await self.get_room(db_room.id)
+        return room or db_room
 
     async def get_room(self, room_id: UUID) -> Optional[Room]:
         stmt = select(Room).options(selectinload(Room.images)).where(Room.id == room_id, Room.is_deleted == False)
