@@ -18,6 +18,7 @@ from app.core.database import Base
 from app.models.user import User, Profile
 from app.models.room import Room, RoomImage
 from app.models.appointment import Appointment
+from app.models.chat import ChatRoom, ChatParticipant, ChatMessage
 
 # this is the Alembic Config object
 config = context.config

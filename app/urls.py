@@ -2,6 +2,7 @@ from django.urls import include, path
 from ninja import NinjaAPI
 
 from app.api.auth import auth_router
+from app.api.chat import chat_router
 from app.api.profile import profile_router
 from app.api.room import room_router
 from app.api.search import search_router
@@ -14,6 +15,7 @@ def health_check(request):
     return {"status": "ok"}
 
 api.add_router("/auth", auth_router)
+api.add_router("/chat", chat_router)
 api.add_router("/profile", profile_router)
 api.add_router("/rooms", room_router)
 api.add_router("/search", search_router)
