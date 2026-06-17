@@ -7,6 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
+sentry-sdk = "^2.60.0"
+django = "^6.0.5"
 
 
 [build-system]

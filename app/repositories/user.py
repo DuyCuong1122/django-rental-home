@@ -43,3 +43,13 @@ class UserRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def update_fcm_token(self, *, user_id: str, token: str, platform: str) -> User | None:
+        user = await self.get_by_id(user_id)
+        if not user:
+            return None
+        user.fcm_token = token
+        user.fcm_platform = platform
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user

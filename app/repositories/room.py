@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from app.models.room import Room, RoomImage
-from app.schemas.room import RoomCreate, SearchQuery
+from app.schemas.room import RoomCreate, SearchQuery, NearbyRoomsQuery, RecommendedRoomsQuery, RecentlyAddedRoomsQuery
 from uuid import UUID
 
 class RoomRepository:
@@ -77,5 +77,67 @@ class RoomRepository:
             stmt = stmt.where(Room.area <= query.max_area)
 
         stmt = stmt.offset(query.offset).limit(query.limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_recently_added(self, query: RecentlyAddedRoomsQuery) -> List[Room]:
+        stmt = (
+            select(Room)
+            .options(selectinload(Room.images))
+            .where(Room.is_deleted == False, Room.status == "APPROVED")
+        )
+        if query.province:
+            stmt = stmt.where(Room.province == query.province)
+        if query.district:
+            stmt = stmt.where(Room.district == query.district)
+
+        stmt = stmt.order_by(Room.created_at.desc()).offset(query.offset).limit(query.limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_recommended(self, query: RecommendedRoomsQuery) -> List[Room]:
+        stmt = (
+            select(Room)
+            .options(selectinload(Room.images))
+            .where(Room.is_deleted == False, Room.status == "APPROVED")
+        )
+        if query.province:
+            stmt = stmt.where(Room.province == query.province)
+        if query.district:
+            stmt = stmt.where(Room.district == query.district)
+
+        stmt = stmt.order_by(Room.updated_at.desc(), Room.created_at.desc()).offset(query.offset).limit(query.limit)
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_nearby(self, query: NearbyRoomsQuery) -> List[Room]:
+        lat0 = float(query.latitude)
+        lon0 = float(query.longitude)
+
+        lat = func.radians(Room.latitude)
+        lon = func.radians(Room.longitude)
+        lat0r = func.radians(lat0)
+        lon0r = func.radians(lon0)
+        cos_angle = (
+            func.cos(lat0r) * func.cos(lat) * func.cos(lon - lon0r)
+            + func.sin(lat0r) * func.sin(lat)
+        )
+        cos_angle = func.least(1.0, func.greatest(-1.0, cos_angle))
+        distance_km = 6371.0 * func.acos(cos_angle)
+
+        stmt = (
+            select(Room)
+            .options(selectinload(Room.images))
+            .where(
+                Room.is_deleted == False,
+                Room.status == "APPROVED",
+                Room.latitude.isnot(None),
+                Room.longitude.isnot(None),
+                distance_km <= float(query.radius_km),
+            )
+            .order_by(distance_km.asc(), Room.created_at.desc())
+            .offset(query.offset)
+            .limit(query.limit)
+        )
         result = await self.session.execute(stmt)
         return result.scalars().all()

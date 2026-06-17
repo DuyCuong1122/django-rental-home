@@ -4,39 +4,51 @@ from app.schemas.user import UserCreate
 from app.schemas.auth import LoginRequest, LoginResponse, Token
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from app.core.redis import get_redis
+from app.core.business_metrics import AUTH_LOGIN_TOTAL, AUTH_REGISTER_TOTAL
 
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.user_repo = UserRepository(db)
 
     async def register(self, user_in: UserCreate):
-        existing_user = await self.user_repo.get_by_email(user_in.email)
-        if existing_user:
-            raise ValueError("Email already registered")
-        
-        user = await self.user_repo.create_user(user_in)
-        access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
-        refresh_token = create_refresh_token(data={"sub": str(user.id)})
-        
-        return LoginResponse(
-            token=Token(access_token=access_token, refresh_token=refresh_token),
-            user=user
-        )
+        try:
+            existing_user = await self.user_repo.get_by_email(user_in.email)
+            if existing_user:
+                AUTH_REGISTER_TOTAL.labels(result="failure", role=str(getattr(user_in, "role", "unknown"))).inc()
+                raise ValueError("Email already registered")
+
+            user = await self.user_repo.create_user(user_in)
+            access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
+            refresh_token = create_refresh_token(data={"sub": str(user.id)})
+            AUTH_REGISTER_TOTAL.labels(result="success", role=str(user.role)).inc()
+
+            return LoginResponse(
+                token=Token(access_token=access_token, refresh_token=refresh_token),
+                user=user,
+            )
+        except ValueError:
+            raise
+        except Exception:
+            AUTH_REGISTER_TOTAL.labels(result="failure", role=str(getattr(user_in, "role", "unknown"))).inc()
+            raise
 
     async def login(self, login_data: LoginRequest):
         user = await self.user_repo.get_by_email(login_data.email)
         if not user or not verify_password(login_data.password, user.password_hash):
+            AUTH_LOGIN_TOTAL.labels(result="failure", role="unknown", reason="invalid_credentials").inc()
             raise ValueError("Incorrect email or password")
-        
+
         if not user.is_active:
+            AUTH_LOGIN_TOTAL.labels(result="failure", role=str(user.role), reason="inactive").inc()
             raise ValueError("Inactive user")
-            
+
         access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
         refresh_token = create_refresh_token(data={"sub": str(user.id)})
-        
+        AUTH_LOGIN_TOTAL.labels(result="success", role=str(user.role), reason="ok").inc()
+
         return LoginResponse(
             token=Token(access_token=access_token, refresh_token=refresh_token),
-            user=user
+            user=user,
         )
 
     async def logout(self, refresh_token: str):

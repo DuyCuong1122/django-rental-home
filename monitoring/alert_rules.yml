@@ -1,0 +1,98 @@
+groups:
+  - name: critical
+    rules:
+      - alert: ApiDown
+        expr: up{job="django"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Django API is down"
+          description: "Prometheus cannot scrape /metrics from Django (job=django)."
+
+      - alert: PostgresExporterDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres exporter is down"
+          description: "Prometheus cannot scrape postgres_exporter."
+
+      - alert: RedisExporterDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis exporter is down"
+          description: "Prometheus cannot scrape redis_exporter."
+
+      - alert: CeleryMetricsDown
+        expr: up{job="celery"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Celery worker metrics endpoint is down"
+          description: "Prometheus cannot scrape celery worker metrics."
+
+  - name: high
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(django_http_responses_total_by_status_total{status=~"5.."}[5m]))
+            /
+            sum(rate(django_http_responses_total_by_status_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "High 5xx error rate"
+          description: "5xx error rate is above 5% for 5 minutes."
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "High API latency (p95)"
+          description: "API p95 latency is above 1s for 5 minutes."
+
+      - alert: CeleryQueueTooLarge
+        expr: max(celery_queue_length) > 1000
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "Celery queue depth too large"
+          description: "Celery queue depth is above 1000 for 5 minutes."
+
+  - name: medium
+    rules:
+      - alert: LoginFailureSpike
+        expr: |
+          sum(rate(business_auth_login_total{result="failure"}[5m])) > 5
+        for: 5m
+        labels:
+          severity: medium
+        annotations:
+          summary: "Login failure spike"
+          description: "Login failures exceed threshold (5/min) for 5 minutes."
+
+      - alert: PushFailureSpike
+        expr: |
+          sum(rate(business_push_send_total{provider="fcm",result=~"error|partial_failure"}[10m])) > 1
+        for: 10m
+        labels:
+          severity: medium
+        annotations:
+          summary: "FCM push failures detected"
+          description: "FCM push failures are occurring."

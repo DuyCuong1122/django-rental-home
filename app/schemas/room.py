@@ -57,3 +57,25 @@ class SearchQuery(BaseModel):
     max_area: float | None = None
     limit: int = 20
     offset: int = 0
+
+
+class NearbyRoomsQuery(BaseModel):
+    latitude: float
+    longitude: float
+    radius_km: float = 5.0
+    limit: int = 20
+    offset: int = 0
+
+
+class RecommendedRoomsQuery(BaseModel):
+    province: str | None = None
+    district: str | None = None
+    limit: int = 20
+    offset: int = 0
+
+
+class RecentlyAddedRoomsQuery(BaseModel):
+    province: str | None = None
+    district: str | None = None
+    limit: int = 20
+    offset: int = 0

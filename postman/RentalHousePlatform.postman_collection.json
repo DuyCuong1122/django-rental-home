@@ -120,7 +120,7 @@
           }
         },
         {
-          "name": "POST Login",
+          "name": "POST Login (Tenant)",
           "event": [
             {
               "listen": "test",
@@ -147,7 +147,51 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{login_email}}\",\n  \"password\": \"{{login_password}}\"\n}\n"
+              "raw": "{\n  \"email\": \"{{tenant_email}}\",\n  \"password\": \"{{tenant_password}}\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Login (Landlord)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  if (data?.token?.access_token) pm.environment.set('access_token', data.token.access_token);",
+                  "  if (data?.token?.refresh_token) pm.environment.set('refresh_token', data.token.refresh_token);",
+                  "  if (data?.user?.id) pm.environment.set('user_id', data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{landlord_email}}\",\n  \"password\": \"{{landlord_password}}\"\n}\n"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/login",
@@ -339,6 +383,87 @@
                 "v1",
                 "profile",
                 "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST Save FCM Token",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{fcm_token}}\",\n  \"platform\": \"{{fcm_platform}}\"\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/fcm-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "fcm-token"
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Push Test",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test notification\",\n  \"body\": \"Hello from Postman\",\n  \"data\": {\n    \"type\": \"test\"\n  },\n  \"receiver_id\": null\n}\n"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/push-test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "push-test"
               ]
             }
           }
@@ -918,6 +1043,121 @@
                 "v1",
                 "rooms",
                 "{{room_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Rooms - Recently Added",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/recent?province={{province}}&district={{district}}&limit={{limit}}&offset={{offset}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "recent"
+              ],
+              "query": [
+                {
+                  "key": "province",
+                  "value": "{{province}}"
+                },
+                {
+                  "key": "district",
+                  "value": "{{district}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                },
+                {
+                  "key": "offset",
+                  "value": "{{offset}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Rooms - Recommended",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/recommended?province={{province}}&district={{district}}&limit={{limit}}&offset={{offset}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "recommended"
+              ],
+              "query": [
+                {
+                  "key": "province",
+                  "value": "{{province}}"
+                },
+                {
+                  "key": "district",
+                  "value": "{{district}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                },
+                {
+                  "key": "offset",
+                  "value": "{{offset}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Rooms - Nearby",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/nearby?latitude={{nearby_lat}}&longitude={{nearby_lng}}&radius_km={{nearby_radius_km}}&limit={{limit}}&offset={{offset}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "{{nearby_lat}}"
+                },
+                {
+                  "key": "longitude",
+                  "value": "{{nearby_lng}}"
+                },
+                {
+                  "key": "radius_km",
+                  "value": "{{nearby_radius_km}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                },
+                {
+                  "key": "offset",
+                  "value": "{{offset}}"
+                }
               ]
             }
           }

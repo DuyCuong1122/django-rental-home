@@ -29,7 +29,15 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-southeast-1"
     
     # Firebase
-    FCM_CREDENTIAL_PATH: str | None = None
+    FIREBASE_ENABLED: bool = Field(False, alias="FIREBASE_ENABLED")
+    FCM_CREDENTIAL_PATH: str = Field("/app/firebase-service-account.json", alias="FCM_CREDENTIAL_PATH")
+
+    SENTRY_DSN: str = Field(
+        "https://d03871ef91dd4b48a9536ec3abbc2ec3@o4511414795173888.ingest.us.sentry.io/4511415330668544",
+        alias="SENTRY_DSN",
+    )
+    SENTRY_SEND_DEFAULT_PII: bool = Field(True, alias="SENTRY_SEND_DEFAULT_PII")
+    SENTRY_TRACES_SAMPLE_RATE: float = Field(1.0, alias="SENTRY_TRACES_SAMPLE_RATE")
     
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     

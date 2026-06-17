@@ -41,3 +41,24 @@ class UserResponse(UserBase):
     profile: ProfileResponse | None = None
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class SaveFcmTokenRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+    platform: str = Field(min_length=1, max_length=32)
+
+
+class PushTestRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    body: str = Field(min_length=1, max_length=512)
+    data: dict[str, str] = Field(default_factory=dict)
+    receiver_id: UUID | None = None
+
+
+class PushTestResponse(BaseModel):
+    success: bool = True
+    receiver_id: UUID
+    has_token: bool = True
+    disabled: bool = False
+    success_count: int = 0
+    failure_count: int = 0

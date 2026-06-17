@@ -192,6 +192,33 @@ class ChatRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
+    async def create_message(
+        self,
+        *,
+        chat_room_id: UUID,
+        sender_id: UUID,
+        message_type: str,
+        message: str | None,
+        image_url: str | None,
+        message_metadata: dict | None,
+        now: datetime,
+    ) -> ChatMessage:
+        m = ChatMessage(
+            chat_room_id=chat_room_id,
+            sender_id=sender_id,
+            message_type=message_type,
+            message=message,
+            image_url=image_url,
+            message_metadata=message_metadata,
+            is_read=False,
+            read_at=None,
+            created_at=now,
+            updated_at=now,
+        )
+        self.session.add(m)
+        await self.session.flush()
+        return m
+
     async def mark_read_up_to(self, *, chat_room_id: UUID, reader_id: UUID, up_to_created_at: datetime, now: datetime) -> int:
         stmt = (
             select(ChatMessage)

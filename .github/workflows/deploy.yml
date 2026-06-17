@@ -6,6 +6,10 @@ on:
       - main
 
 jobs:
+
+  test :
+    needs: test
+    
   deploy:
     runs-on: ubuntu-latest
 

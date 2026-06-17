@@ -7,7 +7,8 @@ from app.models.appointment import Appointment
 from app.models.room import Room
 from sqlalchemy.future import select
 from uuid import UUID
-from app.workers.notifications import send_push_notification
+from app.tasks.notification_tasks import send_push_notification
+from app.core.business_metrics import APPOINTMENTS_CREATED_TOTAL
 
 appointment_router = Router(tags=["Appointments"], auth=JWTAuth())
 
@@ -33,12 +34,15 @@ async def create_appointment(request, payload: AppointmentCreate):
         db.add(appointment)
         await db.commit()
         await db.refresh(appointment)
+
+        APPOINTMENTS_CREATED_TOTAL.labels(status=str(appointment.status)).inc()
         
         # Async Push Notification via Celery
         send_push_notification.delay(
             str(room.landlord_id), 
             "New Appointment Request", 
-            f"A tenant wants to view {room.title}"
+            f"A tenant wants to view {room.title}",
+            {"type": "appointment", "room_id": str(room.id), "appointment_id": str(appointment.id)},
         )
         
         return 201, appointment
@@ -68,7 +72,8 @@ async def update_appointment_status(request, appointment_id: UUID, payload: Appo
         send_push_notification.delay(
             str(appointment.tenant_id), 
             "Appointment Status Updated", 
-            f"Your appointment has been {payload.status.lower()}"
+            f"Your appointment has been {payload.status.lower()}",
+            {"type": "appointment", "appointment_id": str(appointment.id), "status": str(payload.status)},
         )
         
         return appointment

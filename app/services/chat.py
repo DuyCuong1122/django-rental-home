@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
 from ninja.errors import HttpError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.business_metrics import CHAT_MESSAGES_CREATED_TOTAL
 from app.core.redis import get_redis
 from app.repositories.chat import ChatRepository
 from app.schemas.chat import (
@@ -22,6 +24,9 @@ from app.schemas.chat import (
 )
 from app.selectors.chat import decode_cursor, encode_cursor
 from apps.upload.services import S3UploadService
+
+
+logger = logging.getLogger(__name__)
 
 
 class ChatService:
@@ -262,6 +267,98 @@ class ChatService:
         await self.repo.create_report(chat_room_id=chat_room_id, reporter_id=user_id, reason=reason, now=now)
         await self.repo.session.commit()
 
+    async def create_message(
+        self,
+        *,
+        user_id: UUID,
+        chat_room_id: UUID,
+        message_type: str,
+        content: str | None,
+        image_url: str | None,
+        message_metadata: dict | None,
+    ) -> ChatMessageItem:
+        chat_room = await self.repo.get_chat_room(chat_room_id)
+        if not chat_room:
+            raise HttpError(404, "Chat room not found")
+        if user_id not in {chat_room.tenant_id, chat_room.landlord_id}:
+            raise HttpError(403, "Forbidden")
+        if await self.repo.is_blocked_for_user(chat_room_id=chat_room_id, user_id=user_id):
+            raise HttpError(403, "Blocked")
+
+        msg_type = (message_type or "TEXT").upper()
+        if msg_type == "TEXT":
+            if not content or not str(content).strip():
+                raise HttpError(400, "content is required")
+        elif msg_type == "IMAGE":
+            if not image_url or not str(image_url).strip():
+                raise HttpError(400, "image_url is required")
+        elif msg_type == "SYSTEM":
+            if not content or not str(content).strip():
+                raise HttpError(400, "content is required")
+        else:
+            raise HttpError(400, "Invalid message_type")
+
+        now = datetime.now(timezone.utc)
+        await self.repo.ensure_participant(chat_room_id=chat_room_id, user_id=chat_room.tenant_id, now=now)
+        await self.repo.ensure_participant(chat_room_id=chat_room_id, user_id=chat_room.landlord_id, now=now)
+
+        db_message = await self.repo.create_message(
+            chat_room_id=chat_room_id,
+            sender_id=user_id,
+            message_type=msg_type,
+            message=content.strip() if isinstance(content, str) else content,
+            image_url=image_url.strip() if isinstance(image_url, str) else image_url,
+            message_metadata=message_metadata,
+            now=now,
+        )
+
+        if msg_type == "IMAGE":
+            chat_room.last_message = "Image"
+        else:
+            chat_room.last_message = db_message.message
+        chat_room.last_message_id = db_message.id
+        chat_room.last_message_at = now
+
+        await self.repo.session.commit()
+        logger.info("Message saved message_id=%s chat_room_id=%s sender_id=%s", db_message.id, chat_room_id, user_id)
+        CHAT_MESSAGES_CREATED_TOTAL.labels(message_type=str(db_message.message_type)).inc()
+
+        redis = await get_redis()
+        other_id = chat_room.landlord_id if user_id == chat_room.tenant_id else chat_room.tenant_id
+        await redis.delete(f"chat:unread_count:{user_id}")
+        await redis.delete(f"chat:unread_count:{other_id}")
+
+        is_online = await redis.get(f"user_online:{other_id}") == "1"
+        if not is_online:
+            profiles = await self.repo.get_profiles_by_user_ids([user_id])
+            p = profiles.get(user_id)
+            title = p.full_name if p and getattr(p, "full_name", None) else "New message"
+            notif_body = "Image" if msg_type == "IMAGE" else (db_message.message or "")
+            try:
+                from app.tasks.notification_tasks import send_chat_notification
+
+                send_chat_notification.delay(
+                    receiver_id=str(other_id),
+                    title=title,
+                    body=notif_body,
+                    data={"type": "chat", "room_id": str(chat_room_id), "message_id": str(db_message.id)},
+                )
+                logger.info("Receiver offline. Scheduled push receiver_id=%s message_id=%s", other_id, db_message.id)
+            except Exception:
+                logger.exception("Failed to schedule push notification receiver_id=%s message_id=%s", other_id, db_message.id)
+        else:
+            logger.info("Receiver online. Skip push receiver_id=%s message_id=%s", other_id, db_message.id)
+
+        return ChatMessageItem(
+            id=db_message.id,
+            sender_id=db_message.sender_id,
+            message_type=db_message.message_type,
+            content=db_message.message,
+            image_url=db_message.image_url,
+            is_read=bool(db_message.is_read),
+            created_at=db_message.created_at,
+        )
+
     async def _build_inbox_item(self, *, user_id: UUID, chat_room) -> ChatInboxItem:
         items = await self._build_inbox_items(user_id=user_id, chat_rooms=[chat_room])
         return items[0]
@@ -328,14 +425,14 @@ class ChatService:
 
     async def _is_online(self, user_id: UUID) -> bool:
         redis = await get_redis()
-        v = await redis.get(f"chat:presence:{user_id}")
+        v = await redis.get(f"user_online:{user_id}")
         return v == "1"
 
     async def _online_status_by_user_ids(self, user_ids: list[UUID]) -> dict[UUID, bool]:
         if not user_ids:
             return {}
         redis = await get_redis()
-        keys = [f"chat:presence:{uid}" for uid in user_ids]
+        keys = [f"user_online:{uid}" for uid in user_ids]
         values = await redis.mget(keys)
         out: dict[UUID, bool] = {}
         for uid, v in zip(user_ids, values):
