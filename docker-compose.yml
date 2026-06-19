@@ -136,6 +136,7 @@ services:
       - postgres_exporter
       - redis_exporter
       - node-exporter
+      - cadvisor
       - alertmanager
     networks:
       - backend
@@ -154,6 +155,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - loki
     networks:
       - backend
 
@@ -188,6 +190,54 @@ services:
     networks:
       - backend
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      - "/dev/disk/:/dev/disk:ro"
+    privileged: true
+    devices:
+      - "/dev/kmsg:/dev/kmsg"
+    networks:
+      - backend
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command:
+      - "-config.file=/etc/loki/config.yml"
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    networks:
+      - backend
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    volumes:
+      - ./monitoring/promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - promtail_data:/tmp
+    depends_on:
+      - loki
+    networks:
+      - backend
+
   flower:
     image: mher/flower:2.0
     command: celery --broker=${REDIS_URL:-redis://redis:6379/0} flower --port=5555
@@ -219,6 +269,8 @@ volumes:
   prometheus_data:
   grafana_data:
   alertmanager_data:
+  loki_data:
+  promtail_data:
 
 networks:
   backend:

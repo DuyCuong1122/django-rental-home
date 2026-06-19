@@ -10,6 +10,8 @@
 - PostgreSQL monitoring via `pg_stat_statements` + postgres_exporter
 - Redis monitoring via redis_exporter
 - Host/server monitoring via node-exporter
+- Container monitoring via cAdvisor
+- Centralized logging via Loki + Promtail
 - Celery task monitoring (Prometheus metrics + Flower UI)
 - Prometheus + Grafana via docker-compose
 - k6 load/stress scripts under `performance-tests/`
@@ -30,6 +32,8 @@ docker compose up --build
 - Prometheus UI: `http://localhost:9090`
 - Grafana UI: `http://localhost:3000`
 - Node Exporter metrics: `http://localhost:9100/metrics`
+- cAdvisor metrics: `http://localhost:8080/metrics`
+- Loki ready: `http://localhost:3100/ready`
 
 3. Grafana credentials:
 
@@ -81,6 +85,22 @@ Node Exporter is scraped separately by Prometheus at `node-exporter:9100` and pr
 - Network traffic (`node_network_*`)
 - System load (`node_load1`, `node_load5`, `node_load15`)
 - Uptime (`node_boot_time_seconds`)
+
+cAdvisor is scraped by Prometheus at `cadvisor:8080` and provides container-level metrics such as:
+
+- `container_cpu_usage_seconds_total`
+- `container_memory_working_set_bytes`
+- `container_network_receive_bytes_total`
+- `container_network_transmit_bytes_total`
+- `container_fs_usage_bytes`
+- `container_start_time_seconds`
+
+Loki receives logs from Promtail, which tails Docker container logs and adds labels like:
+
+- `container`
+- `service`
+- `compose_project`
+- `stream`
 
 ## Health Checks
 

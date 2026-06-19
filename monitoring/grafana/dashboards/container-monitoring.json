@@ -1,0 +1,203 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by(name) (rate(container_cpu_usage_seconds_total{name=~\"django_rental_house-api-1|django_rental_house-postgres-1|django_rental_house-redis-1|django_rental_house-grafana-1|django_rental_house-prometheus-1|django_rental_house-celery_worker-1|django_rental_house-celery_beat-1\"}[5m]))",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Container CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by(name) (container_memory_working_set_bytes{name=~\"django_rental_house-api-1|django_rental_house-postgres-1|django_rental_house-redis-1|django_rental_house-grafana-1|django_rental_house-prometheus-1|django_rental_house-celery_worker-1|django_rental_house-celery_beat-1\"})",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Container Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytespersec"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 3,
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by(name) (rate(container_network_receive_bytes_total{name=~\"django_rental_house-api-1|django_rental_house-postgres-1|django_rental_house-redis-1|django_rental_house-grafana-1|django_rental_house-prometheus-1|django_rental_house-celery_worker-1|django_rental_house-celery_beat-1\"}[5m]))",
+          "legendFormat": "rx {{name}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum by(name) (rate(container_network_transmit_bytes_total{name=~\"django_rental_house-api-1|django_rental_house-postgres-1|django_rental_house-redis-1|django_rental_house-grafana-1|django_rental_house-prometheus-1|django_rental_house-celery_worker-1|django_rental_house-celery_beat-1\"}[5m]))",
+          "legendFormat": "tx {{name}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Container Network",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 4,
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by(name) (container_fs_usage_bytes{name=~\"django_rental_house-api-1|django_rental_house-postgres-1|django_rental_house-redis-1|django_rental_house-grafana-1|django_rental_house-prometheus-1|django_rental_house-celery_worker-1|django_rental_house-celery_beat-1\"})",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Container Filesystem",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 5,
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "changes(container_start_time_seconds{name=~\"django_rental_house-api-1|django_rental_house-postgres-1|django_rental_house-redis-1|django_rental_house-grafana-1|django_rental_house-prometheus-1|django_rental_house-celery_worker-1|django_rental_house-celery_beat-1\"}[24h])",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Container Restart Count (24h)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "cadvisor",
+    "containers"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Container Monitoring",
+  "uid": "container-monitoring",
+  "version": 1,
+  "weekStart": ""
+}

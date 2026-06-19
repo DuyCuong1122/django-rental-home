@@ -39,6 +39,12 @@ scrape_configs:
       - targets:
           - node-exporter:9100
 
+  # cAdvisor exposes per-container metrics such as CPU, memory, filesystem and network usage.
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - cadvisor:8080
+
   # Celery worker exposes task-level metrics via prometheus_client HTTP server.
   - job_name: celery
     metrics_path: /metrics
