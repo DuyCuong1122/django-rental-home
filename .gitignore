@@ -13,3 +13,5 @@
 .env.*
 credentials/
 *.json
+!monitoring/grafana/dashboards/
+!monitoring/grafana/dashboards/*.json
