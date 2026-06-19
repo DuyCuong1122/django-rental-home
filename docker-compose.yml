@@ -135,6 +135,7 @@ services:
       - api
       - postgres_exporter
       - redis_exporter
+      - node-exporter
       - alertmanager
     networks:
       - backend
@@ -171,6 +172,19 @@ services:
       REDIS_ADDR: redis://redis:6379
     depends_on:
       - redis
+    networks:
+      - backend
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - "/:/host:ro,rslave"
     networks:
       - backend
 

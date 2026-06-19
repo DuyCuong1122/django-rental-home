@@ -9,6 +9,7 @@
 - Structured JSON logging (stdout) with `X-Request-ID` correlation
 - PostgreSQL monitoring via `pg_stat_statements` + postgres_exporter
 - Redis monitoring via redis_exporter
+- Host/server monitoring via node-exporter
 - Celery task monitoring (Prometheus metrics + Flower UI)
 - Prometheus + Grafana via docker-compose
 - k6 load/stress scripts under `performance-tests/`
@@ -28,6 +29,7 @@ docker compose up --build
 - Flower (Celery UI): `http://localhost:5555`
 - Prometheus UI: `http://localhost:9090`
 - Grafana UI: `http://localhost:3000`
+- Node Exporter metrics: `http://localhost:9100/metrics`
 
 3. Grafana credentials:
 
@@ -69,6 +71,16 @@ Celery worker metrics are exposed separately by the worker process (scraped by P
   - `celery_task_retry_total`
   - `celery_task_inflight`
   - `celery_queue_length`
+
+Node Exporter is scraped separately by Prometheus at `node-exporter:9100` and provides host-level metrics such as:
+
+- CPU usage (`node_cpu_seconds_total`)
+- Memory usage (`node_memory_*`)
+- Disk usage / filesystem (`node_filesystem_*`)
+- Disk IO (`node_disk_*`)
+- Network traffic (`node_network_*`)
+- System load (`node_load1`, `node_load5`, `node_load15`)
+- Uptime (`node_boot_time_seconds`)
 
 ## Health Checks
 
