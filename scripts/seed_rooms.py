@@ -72,7 +72,7 @@ async def _get_or_create_landlord(db) -> User:
     return user
 
 
-async def seed_rooms(total: int = 100, nearby_count: int = 10) -> None:
+async def seed_rooms(total: int = 1000000, nearby_count: int = 10) -> None:
     now = datetime.now(timezone.utc)
     async with AsyncSessionLocal() as db:
         landlord = await _get_or_create_landlord(db)
